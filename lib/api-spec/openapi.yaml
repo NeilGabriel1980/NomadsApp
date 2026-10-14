@@ -1,0 +1,600 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: matchReports
+    description: Shared weekly match reports
+  - name: seasonMatches
+    description: Shared editable season results and player events
+  - name: fixtures
+    description: Published fixtures and protected fixture imports
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /match-reports:
+    get:
+      operationId: listMatchReports
+      tags: [matchReports]
+      summary: List match reports
+      parameters:
+        - name: season
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: ["2025/26", "2026/27"]
+      responses:
+        "200":
+          description: Match reports for the selected season
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MatchReportsResponse"
+        "400":
+          description: Invalid season
+    post:
+      operationId: createMatchReport
+      tags: [matchReports]
+      summary: Create a match report
+      description: Creates a report using the private editor key supplied in the request header.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MatchReportInput"
+      responses:
+        "201":
+          description: Created match report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MatchReport"
+        "400":
+          description: Invalid report
+        "401":
+          description: Invalid editor key
+        "503":
+          description: Editor access is not configured
+  /match-reports/{id}:
+    patch:
+      operationId: updateMatchReport
+      tags: [matchReports]
+      summary: Update a match report
+      description: Updates a report using the private editor key supplied in the request header.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MatchReportInput"
+      responses:
+        "200":
+          description: Updated match report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MatchReport"
+        "400":
+          description: Invalid report
+        "401":
+          description: Invalid editor key
+        "404":
+          description: Report not found
+        "503":
+          description: Editor access is not configured
+    delete:
+      operationId: deleteMatchReport
+      tags: [matchReports]
+      summary: Delete a match report
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Report deleted
+        "401":
+          description: Invalid editor key
+        "404":
+          description: Report not found
+        "503":
+          description: Editor access is not configured
+  /season-matches:
+    get:
+      operationId: listSeasonMatches
+      tags: [seasonMatches]
+      summary: List entered season matches
+      parameters:
+        - name: season
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: ["2025/26", "2026/27"]
+      responses:
+        "200":
+          description: Entered matches for the selected season
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeasonMatchesResponse"
+        "400":
+          description: Invalid season
+    post:
+      operationId: createSeasonMatch
+      tags: [seasonMatches]
+      summary: Add a season match
+      description: Adds a match and its player goals using the private editor key supplied in the request header.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SeasonMatchInput"
+      responses:
+        "201":
+          description: Created season match
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeasonMatch"
+        "400":
+          description: Invalid match
+        "401":
+          description: Invalid editor key
+        "503":
+          description: Editor access is not configured
+  /season-matches/{id}:
+    put:
+      operationId: updateSeasonMatch
+      tags: [seasonMatches]
+      summary: Update a season match
+      description: Updates a match and its player goals using the private editor key supplied in the request header.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SeasonMatchInput"
+      responses:
+        "200":
+          description: Updated season match
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeasonMatch"
+        "400":
+          description: Invalid match
+        "401":
+          description: Invalid editor key
+        "409":
+          description: The supplied match version is stale
+        "404":
+          description: Match not found
+        "503":
+          description: Editor access is not configured
+    delete:
+      operationId: deleteSeasonMatch
+      tags: [seasonMatches]
+      summary: Delete a season match
+      description: Deletes a match when the current match version is supplied in the x-match-version header.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Match deleted
+        "401":
+          description: Invalid editor key
+        "409":
+          description: The supplied match version is stale
+        "404":
+          description: Match not found
+        "503":
+          description: Editor access is not configured
+  /fixtures:
+    get:
+      operationId: listFixtures
+      tags: [fixtures]
+      summary: List published fixtures
+      parameters:
+        - name: season
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: ["2026/27"]
+      responses:
+        "200":
+          description: Published fixture schedule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FixturesResponse"
+        "400":
+          description: Invalid season
+    put:
+      operationId: replaceFixtures
+      tags: [fixtures]
+      summary: Replace the published fixture schedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FixtureReplacementInput"
+      responses:
+        "200":
+          description: Updated fixture schedule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FixturesResponse"
+        "400":
+          description: Invalid fixtures
+        "401":
+          description: Invalid editor key
+  /fixture-imports/preview:
+    post:
+      operationId: previewFixtureImport
+      tags: [fixtures]
+      summary: Parse and validate copied FA Full-Time fixtures
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FixtureImportTextInput"
+      responses:
+        "200":
+          description: Parsed fixtures ready for review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FixtureImportPreview"
+        "400":
+          description: Rows could not be parsed
+        "401":
+          description: Invalid editor key
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    MatchReport:
+      type: object
+      properties:
+        id:
+          type: integer
+        season:
+          type: string
+          enum: ["2025/26", "2026/27"]
+        matchDate:
+          type: string
+          format: date
+        opponent:
+          type: string
+        score:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - season
+        - matchDate
+        - opponent
+        - score
+        - title
+        - body
+        - createdAt
+    MatchReportsResponse:
+      type: object
+      properties:
+        reports:
+          type: array
+          items:
+            $ref: "#/components/schemas/MatchReport"
+      required:
+        - reports
+    MatchReportInput:
+      type: object
+      properties:
+        season:
+          type: string
+          enum: ["2025/26", "2026/27"]
+        matchDate:
+          type: string
+          format: date
+        opponent:
+          type: string
+          minLength: 1
+          maxLength: 120
+        score:
+          type: string
+          maxLength: 30
+        title:
+          type: string
+          minLength: 1
+          maxLength: 160
+        body:
+          type: string
+          minLength: 1
+          maxLength: 10000
+      required:
+        - season
+        - matchDate
+        - opponent
+        - score
+        - title
+        - body
+    SeasonGoal:
+      type: object
+      properties:
+        player:
+          type: string
+        goals:
+          type: integer
+          minimum: 1
+          maximum: 10
+      required:
+        - player
+        - goals
+    SeasonMatch:
+      type: object
+      properties:
+        id:
+          type: integer
+        num:
+          type: integer
+        season:
+          type: string
+          enum: ["2025/26", "2026/27"]
+        matchDate:
+          type: string
+          format: date
+        competition:
+          type: string
+        type:
+          type: string
+        venue:
+          type: string
+          enum: ["Home", "Away"]
+        opponent:
+          type: string
+        vikingsGF:
+          type: integer
+          minimum: 0
+        vikingsGA:
+          type: integer
+          minimum: 0
+        motm:
+          type: string
+        gotw:
+          type: string
+          nullable: true
+        captain:
+          type: string
+          nullable: true
+        version:
+          type: integer
+          minimum: 1
+        goals:
+          type: array
+          items:
+            $ref: "#/components/schemas/SeasonGoal"
+      required:
+        - id
+        - num
+        - season
+        - matchDate
+        - competition
+        - type
+        - venue
+        - opponent
+        - vikingsGF
+        - vikingsGA
+        - motm
+        - gotw
+        - captain
+        - version
+        - goals
+    SeasonMatchesResponse:
+      type: object
+      properties:
+        matches:
+          type: array
+          items:
+            $ref: "#/components/schemas/SeasonMatch"
+      required:
+        - matches
+    SeasonMatchInput:
+      type: object
+      properties:
+        season:
+          type: string
+          enum: ["2025/26", "2026/27"]
+        matchDate:
+          type: string
+          format: date
+        competition:
+          type: string
+          minLength: 1
+          maxLength: 120
+        type:
+          type: string
+          minLength: 1
+          maxLength: 80
+        venue:
+          type: string
+          enum: ["Home", "Away"]
+        opponent:
+          type: string
+          minLength: 1
+          maxLength: 120
+        vikingsGF:
+          type: integer
+          minimum: 0
+          maximum: 99
+        vikingsGA:
+          type: integer
+          minimum: 0
+          maximum: 99
+        motm:
+          type: string
+          maxLength: 80
+        gotw:
+          type: string
+          nullable: true
+          maxLength: 80
+        captain:
+          type: string
+          nullable: true
+          maxLength: 80
+        goals:
+          type: array
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/SeasonGoal"
+        expectedVersion:
+          type: integer
+          minimum: 1
+          nullable: true
+      required:
+        - season
+        - matchDate
+        - competition
+        - type
+        - venue
+        - opponent
+        - vikingsGF
+        - vikingsGA
+        - motm
+        - gotw
+        - captain
+        - goals
+        - expectedVersion
+    Fixture:
+      type: object
+      properties:
+        id: { type: integer }
+        externalId: { type: ["string", "null"] }
+        date: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$' }
+        kickoff: { type: string }
+        homeTeam: { type: string }
+        awayTeam: { type: string }
+        competition: { type: string }
+        status: { type: string, enum: [scheduled, postponed, cancelled] }
+        pitchLocation: { type: ["string", "null"], maxLength: 160 }
+        pitchAddress: { type: ["string", "null"], maxLength: 500 }
+        sourceUrl: { type: string }
+        opponent: { type: string }
+        venue: { type: string, enum: ["Home", "Away"] }
+      required: [id, externalId, date, kickoff, homeTeam, awayTeam, competition, status, sourceUrl, opponent, venue]
+    FixtureInput:
+      type: object
+      properties:
+        externalId: { type: ["string", "null"], maxLength: 80 }
+        date: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$' }
+        kickoff: { type: string, pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$' }
+        homeTeam: { type: string, minLength: 1, maxLength: 160 }
+        awayTeam: { type: string, minLength: 1, maxLength: 160 }
+        competition: { type: string, minLength: 1, maxLength: 160 }
+        status:
+          type: string
+          enum: [scheduled, postponed, cancelled]
+          description: Omitted status is treated as scheduled for older imports.
+        pitchLocation: { type: ["string", "null"], maxLength: 160 }
+        pitchAddress: { type: ["string", "null"], maxLength: 500 }
+        sourceUrl: { type: string, maxLength: 1000 }
+      required: [externalId, date, kickoff, homeTeam, awayTeam, competition, sourceUrl]
+    FixtureImportMeta:
+      type: object
+      properties:
+        sourceName: { type: string }
+        sourceUrl: { type: string }
+        importedAt: { type: string, format: date-time }
+      required: [sourceName, sourceUrl, importedAt]
+    FixturesResponse:
+      type: object
+      properties:
+        fixtures:
+          type: array
+          items: { $ref: "#/components/schemas/Fixture" }
+        importMeta:
+          $ref: "#/components/schemas/FixtureImportMeta"
+      required: [fixtures, importMeta]
+    FixtureImportTextInput:
+      type: object
+      properties:
+        text: { type: string, minLength: 1, maxLength: 100000 }
+      required: [text]
+    FixtureImportPreview:
+      type: object
+      properties:
+        fixtures:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/FixtureInput" }
+        warnings:
+          type: array
+          items: { type: string }
+      required: [fixtures, warnings]
+    FixtureReplacementInput:
+      type: object
+      properties:
+        season: { type: string, enum: ["2026/27"] }
+        sourceName: { type: string, minLength: 1, maxLength: 160 }
+        sourceUrl: { type: string, maxLength: 1000 }
+        fixtures:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items: { $ref: "#/components/schemas/FixtureInput" }
+      required: [season, sourceName, sourceUrl, fixtures]
+

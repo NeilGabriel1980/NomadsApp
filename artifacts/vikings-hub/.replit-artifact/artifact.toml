@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "Neston Nomads Vikings"
+version = "1.0.0"
+id = "artifacts/vikings-hub"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25996
+
+[services.development]
+run = "pnpm --filter @workspace/vikings-hub run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/vikings-hub", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/vikings-hub/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25996"
+BASE_PATH = "/"

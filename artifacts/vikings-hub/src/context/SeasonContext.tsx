@@ -53,7 +53,7 @@ export function SeasonProvider({ children }: { children: React.ReactNode }) {
 
   const season = React.useMemo(() => {
     if (seasonKey === "2025/26") return seasons[seasonKey];
-    return liveSeasonQuery.data
+    return Array.isArray(liveSeasonQuery.data?.matches)
       ? buildLiveSeasonData(liveSeasonQuery.data.matches)
       : season2026_27;
   }, [liveSeasonQuery.data, seasonKey]);
